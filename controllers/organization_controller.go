@@ -15,16 +15,6 @@ func init() {
 	organizationService = services.NewOrganizationService()
 }
 
-// TODO check if i really even need this, since its bbeing handled by the middleware
-func getUserIDFromContext(c *gin.Context) (string, bool) {
-	userID, exists := c.Get("userID")
-	if !exists {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "User ID not found in context"})
-		return "", false
-	}
-	return userID.(string), true
-}
-
 // CreateOrganization handles creating a new organization.
 // @Summary Create a new organization
 // @Description Creates a new organization associated with the authenticated user.
@@ -40,10 +30,7 @@ func getUserIDFromContext(c *gin.Context) (string, bool) {
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
 // @Router /organizations [post]
 func CreateOrganization(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
+	userID, _ := c.Get("userID")
 
 	var req models.CreateOrganizationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -51,7 +38,7 @@ func CreateOrganization(c *gin.Context) {
 		return
 	}
 
-	org, err := organizationService.CreateOrganization(req.Name, userID)
+	org, err := organizationService.CreateOrganization(req.Name, userID.(string))
 	if err != nil {
 		if strings.Contains(err.Error(), "organization name already exists") {
 			c.JSON(http.StatusConflict, models.ErrorResponse{Message: err.Error()})
@@ -75,12 +62,9 @@ func CreateOrganization(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
 // @Router /organizations [get]
 func GetOrganizations(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
+	userID, _ := c.Get("userID")
 
-	orgs, err := organizationService.GetOrganizationsByUser(userID)
+	orgs, err := organizationService.GetOrganizationsByUser(userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Failed to retrieve organizations: " + err.Error()})
 		return
@@ -94,22 +78,16 @@ func GetOrganizations(c *gin.Context) {
 // @Description Retrieves a specific organization by its ID, ensuring the authenticated user is the owner.
 // @Tags Organizations
 // @Security ApiKeyAuth
-// @Param id path string true "Organization ID"
+// @Param orgID path string true "Organization ID"
 // @Produce json
 // @Success 200 {object} models.Organization "Organization details"
-// @Failure 400 {object} models.ErrorResponse "Bad Request (e.g., invalid ID format)"
 // @Failure 401 {object} models.ErrorResponse "Unauthorized"
 // @Failure 403 {object} models.ErrorResponse "Forbidden (if user is not the owner)"
 // @Failure 404 {object} models.ErrorResponse "Not Found"
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
-// @Router /organizations/{id} [get]
+// @Router /organizations/{orgID} [get]
 func GetOrganizationByID(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
-	orgID := c.Param("id")
+	orgID := c.Param("orgID")
 
 	org, err := organizationService.GetOrganizationByID(orgID)
 	if err != nil {
@@ -118,11 +96,6 @@ func GetOrganizationByID(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Failed to retreive organization: " + err.Error()})
-		return
-	}
-
-	if org.OwnerID != userID {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{Message: "You do not have permission to access this organization"})
 		return
 	}
 
@@ -136,7 +109,7 @@ func GetOrganizationByID(c *gin.Context) {
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Param id path string true "Organization ID"
+// @Param orgID path string true "Organization ID"
 // @Param organization body models.UpdateOrganizationRequest true "Organization update details"
 // @Success 200 {object} models.Organization "Organization updated successfully"
 // @Failure 400 {object} models.ErrorResponse "Bad Request"
@@ -145,29 +118,9 @@ func GetOrganizationByID(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse "Not Found"
 // @Failure 409 {object} models.ErrorResponse "Conflict (if new name already exists)"
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
-// @Router /organizations/{id} [put]
+// @Router /organizations/{orgID} [put]
 func UpdateOrganization(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
-	orgID := c.Param("id")
-
-	existingOrg, err := organizationService.GetOrganizationByID(orgID)
-	if err != nil {
-		if strings.Contains(err.Error(), "organization not found") {
-			c.JSON(http.StatusNotFound, models.ErrorResponse{Message: err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Error getting organization: " + err.Error()})
-		return
-	}
-
-	if existingOrg.OwnerID != userID {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{Message: "You do not have permission to update this organization"})
-		return
-	}
+	orgID := c.Param("orgID")
 
 	var req models.UpdateOrganizationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -193,38 +146,17 @@ func UpdateOrganization(c *gin.Context) {
 // @Description Deletes a specific organization by its ID, ensuring the authenticated user is the owner.
 // @Tags Organizations
 // @Security ApiKeyAuth
-// @Param id path string true "Organization ID"
+// @Param orgID path string true "Organization ID"
 // @Success 204 "No Content"
-// @Failure 400 {object} models.ErrorResponse "Bad Request"
 // @Failure 401 {object} models.ErrorResponse "Unauthorized"
 // @Failure 403 {object} models.ErrorResponse "Forbidden"
 // @Failure 404 {object} models.ErrorResponse "Not Found"
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
-// @Router /organizations/{id} [delete]
+// @Router /organizations/{orgID} [delete]
 func DeleteOrganization(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
+	orgID := c.Param("orgID")
 
-	orgID := c.Param("id")
-
-	existingOrg, err := organizationService.GetOrganizationByID(orgID)
-	if err != nil {
-		if strings.Contains(err.Error(), "organization not found") {
-			c.JSON(http.StatusNotFound, models.ErrorResponse{Message: err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Error getting organization: " + err.Error()})
-		return
-	}
-
-	if existingOrg.OwnerID != userID {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{Message: "You do not have permission to update this organization"})
-		return
-	}
-
-	err = organizationService.DeleteOrganization(orgID)
+	err := organizationService.DeleteOrganization(orgID)
 	if err != nil {
 		if strings.Contains(err.Error(), "organization not found or already deleted") {
 			c.JSON(http.StatusNotFound, models.ErrorResponse{Message: err.Error()})

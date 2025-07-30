@@ -1,7 +1,5 @@
 package controllers
 
-// TODO check this once, its too vibe coded, need to verify
-
 import (
 	"kanban-app/api/models"
 	"kanban-app/api/services"
@@ -15,24 +13,6 @@ var projectService *services.ProjectService
 
 func init() {
 	projectService = services.NewProjectService()
-}
-
-func checkOrganizationOwnership(c *gin.Context, orgID, userID string) (*models.Organization, bool) {
-	org, err := organizationService.GetOrganizationByID(orgID)
-	if err != nil {
-		if strings.Contains(err.Error(), "organization not found") {
-			c.JSON(http.StatusNotFound, models.ErrorResponse{Message: "Organization not found"})
-		} else {
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Error checking  organization: " + err.Error()})
-		}
-		return nil, false
-	}
-
-	if org.OwnerID != userID {
-		c.JSON(http.StatusForbidden, models.ErrorResponse{Message: "You do not have permission to access this organization"})
-		return nil, false
-	}
-	return org, true
 }
 
 // CreateProject handles creating a new project within an organization.
@@ -53,16 +33,8 @@ func checkOrganizationOwnership(c *gin.Context, orgID, userID string) (*models.O
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
 // @Router /organizations/{orgID}/projects [post]
 func CreateProject(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
+	userID, _ := c.Get("userID")
 	orgID := c.Param("orgID")
-	_, ok = checkOrganizationOwnership(c, orgID, userID)
-	if !ok {
-		return
-	}
 
 	var req models.CreateProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -70,7 +42,7 @@ func CreateProject(c *gin.Context) {
 		return
 	}
 
-	project, err := projectService.CreateProject(orgID, req.Name, req.Description)
+	project, err := projectService.CreateProject(orgID, req.Name, req.Description, userID.(string))
 	if err != nil {
 		if strings.Contains(err.Error(), "project name already exists") {
 			c.JSON(http.StatusConflict, models.ErrorResponse{Message: err.Error()})
@@ -96,51 +68,8 @@ func CreateProject(c *gin.Context) {
 // @Failure 404 {object} models.ErrorResponse "Not Found"
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
 // @Router /organizations/{orgID}/projects [get]
-func GetProject(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
-	orgID := c.Param("orgID")
-	_, ok = checkOrganizationOwnership(c, orgID, userID)
-	if !ok {
-		return
-	}
-
-	projects, err := projectService.GetProjectsByOrganizationID(orgID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Failed to retreive projects: " + err.Error()})
-		return
-	}
-
-	c.JSON(http.StatusOK, projects)
-}
-
-// GetProjects handles retrieving all projects for a specific organization.
-// @Summary Get all projects in an organization
-// @Description Retrieves all projects within a specified organization. User must own the organization.
-// @Tags Projects
-// @Security ApiKeyAuth
-// @Param orgID path string true "Organization ID"
-// @Produce json
-// @Success 200 {array} models.Project "List of projects"
-// @Failure 401 {object} models.ErrorResponse "Unauthorized"
-// @Failure 403 {object} models.ErrorResponse "Forbidden"
-// @Failure 404 {object} models.ErrorResponse "Not Found"
-// @Failure 500 {object} models.ErrorResponse "Internal Server Error"
-// @Router /organizations/{orgID}/projects [get]
 func GetProjects(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
 	orgID := c.Param("orgID")
-	_, ok = checkOrganizationOwnership(c, orgID, userID)
-	if !ok {
-		return
-	}
 
 	projects, err := projectService.GetProjectsByOrganizationID(orgID)
 	if err != nil {
@@ -160,25 +89,13 @@ func GetProjects(c *gin.Context) {
 // @Param projectID path string true "Project ID"
 // @Produce json
 // @Success 200 {object} models.Project "Project details"
-// @Failure 400 {object} models.ErrorResponse "Bad Request"
 // @Failure 401 {object} models.ErrorResponse "Unauthorized"
 // @Failure 403 {object} models.ErrorResponse "Forbidden"
 // @Failure 404 {object} models.ErrorResponse "Not Found"
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
 // @Router /organizations/{orgID}/projects/{projectID} [get]
 func GetProjectByID(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
-	orgID := c.Param("orgID")
 	projectID := c.Param("projectID")
-
-	_, ok = checkOrganizationOwnership(c, orgID, userID)
-	if !ok {
-		return
-	}
 
 	project, err := projectService.GetProjectByID(projectID)
 	if err != nil {
@@ -187,11 +104,6 @@ func GetProjectByID(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Failed to retrieve project: " + err.Error()})
-		return
-	}
-
-	if project.OrganizationID != orgID {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Message: "Project not found in the specified organization"})
 		return
 	}
 
@@ -217,36 +129,11 @@ func GetProjectByID(c *gin.Context) {
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
 // @Router /organizations/{orgID}/projects/{projectID} [put]
 func UpdateProject(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
-	orgID := c.Param("orgID")
 	projectID := c.Param("projectID")
-
-	_, ok = checkOrganizationOwnership(c, orgID, userID)
-	if !ok {
-		return
-	}
 
 	var req models.UpdateProjectRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, models.ErrorResponse{Message: err.Error()})
-		return
-	}
-
-	project, err := projectService.GetProjectByID(projectID)
-	if err != nil {
-		if strings.Contains(err.Error(), "project not found") {
-			c.JSON(http.StatusNotFound, models.ErrorResponse{Message: err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Error retrieving project for update: " + err.Error()})
-		return
-	}
-	if project.OrganizationID != orgID {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Message: "Project not found in the specified organization"})
 		return
 	}
 
@@ -271,42 +158,15 @@ func UpdateProject(c *gin.Context) {
 // @Param orgID path string true "Organization ID"
 // @Param projectID path string true "Project ID"
 // @Success 204 "No Content"
-// @Failure 400 {object} models.ErrorResponse "Bad Request"
 // @Failure 401 {object} models.ErrorResponse "Unauthorized"
 // @Failure 403 {object} models.ErrorResponse "Forbidden"
 // @Failure 404 {object} models.ErrorResponse "Not Found"
 // @Failure 500 {object} models.ErrorResponse "Internal Server Error"
 // @Router /organizations/{orgID}/projects/{projectID} [delete]
 func DeleteProject(c *gin.Context) {
-	userID, ok := getUserIDFromContext(c)
-	if !ok {
-		return
-	}
-
-	orgID := c.Param("orgID")
 	projectID := c.Param("projectID")
 
-	_, ok = checkOrganizationOwnership(c, orgID, userID)
-	if !ok {
-		return
-	}
-
-	// Retrieve project to verify its parentage before deleting
-	project, err := projectService.GetProjectByID(projectID)
-	if err != nil {
-		if strings.Contains(err.Error(), "project not found") {
-			c.JSON(http.StatusNotFound, models.ErrorResponse{Message: err.Error()})
-			return
-		}
-		c.JSON(http.StatusInternalServerError, models.ErrorResponse{Message: "Error retrieving project for deletion: " + err.Error()})
-		return
-	}
-	if project.OrganizationID != orgID {
-		c.JSON(http.StatusNotFound, models.ErrorResponse{Message: "Project not found in the specified organization"})
-		return
-	}
-
-	err = projectService.DeleteProject(projectID)
+	err := projectService.DeleteProject(projectID)
 	if err != nil {
 		if strings.Contains(err.Error(), "project not found or already deleted") {
 			c.JSON(http.StatusNotFound, models.ErrorResponse{Message: err.Error()})

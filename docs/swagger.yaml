@@ -1,0 +1,1670 @@
+basePath: /api
+definitions:
+  models.Board:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      project_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Card:
+    properties:
+      assigned_to:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      due_date:
+        type: string
+      id:
+        type: string
+      list_id:
+        type: string
+      position:
+        type: integer
+      title:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.CreateBoardRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  models.CreateCardRequest:
+    properties:
+      assigned_to:
+        type: string
+      description:
+        maxLength: 1000
+        type: string
+      due_date:
+        type: string
+      title:
+        maxLength: 200
+        minLength: 1
+        type: string
+    required:
+    - title
+    type: object
+  models.CreateListRequest:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - name
+    type: object
+  models.CreateOrganizationRequest:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  models.CreateProjectRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 100
+        minLength: 3
+        type: string
+    required:
+    - name
+    type: object
+  models.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  models.List:
+    properties:
+      board:
+        $ref: '#/definitions/models.Board'
+      board_id:
+        type: string
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      position:
+        type: integer
+      updated_at:
+        type: string
+    type: object
+  models.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  models.Organization:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      owner_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.Project:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      organization_id:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  models.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        minLength: 6
+        type: string
+      password_confirm:
+        type: string
+      username:
+        type: string
+    required:
+    - email
+    - password
+    - password_confirm
+    - username
+    type: object
+  models.TokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  models.UpdateBoardRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 100
+        minLength: 3
+        type: string
+    type: object
+  models.UpdateCardRequest:
+    properties:
+      assigned_to:
+        type: string
+      description:
+        maxLength: 1000
+        type: string
+      due_date:
+        type: string
+      list_id:
+        type: string
+      position:
+        type: integer
+      title:
+        maxLength: 200
+        minLength: 1
+        type: string
+    type: object
+  models.UpdateListRequest:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      position:
+        type: integer
+    type: object
+  models.UpdateOrganizationRequest:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 3
+        type: string
+    type: object
+  models.UpdateProjectRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 100
+        minLength: 3
+        type: string
+    type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      updated_at:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: This is the API documentation for the Kanban application.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Kanban API Documentation
+  version: "1.0"
+paths:
+  /health:
+    get:
+      consumes:
+      - '*/*'
+      description: get the status of the server.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Show the status of the server.
+      tags:
+      - health
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user and return a JWT token
+      parameters:
+      - description: User login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully logged in
+          schema:
+            $ref: '#/definitions/models.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Log in a user
+      tags:
+      - Authentication
+  /organizations:
+    get:
+      description: Retrieves all organizations owned by the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of organizations
+          schema:
+            items:
+              $ref: '#/definitions/models.Organization'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user's organizations
+      tags:
+      - Organizations
+    post:
+      consumes:
+      - application/json
+      description: Creates a new organization associated with the authenticated user.
+      parameters:
+      - description: Organization creation details
+        in: body
+        name: organization
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Organization created successfully
+          schema:
+            $ref: '#/definitions/models.Organization'
+        "400":
+          description: Bad Request (e.g., validation error)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized (if token is missing or invalid)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict (if organization name already exists)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new organization
+      tags:
+      - Organizations
+  /organizations/{id}:
+    delete:
+      description: Deletes a specific organization by its ID, ensuring the authenticated
+        user is the owner.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete an organization
+      tags:
+      - Organizations
+    get:
+      description: Retrieves a specific organization by its ID, ensuring the authenticated
+        user is the owner.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization details
+          schema:
+            $ref: '#/definitions/models.Organization'
+        "400":
+          description: Bad Request (e.g., invalid ID format)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden (if user is not the owner)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get organization by ID
+      tags:
+      - Organizations
+    put:
+      consumes:
+      - application/json
+      description: Updates a specific organization by its ID, ensuring the authenticated
+        user is the owner.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Organization update details
+        in: body
+        name: organization
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateOrganizationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Organization updated successfully
+          schema:
+            $ref: '#/definitions/models.Organization'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict (if new name already exists)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update an organization
+      tags:
+      - Organizations
+  /organizations/{orgID}/projects:
+    get:
+      description: Retrieves all projects within a specified organization. User must
+        own the organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of projects
+          schema:
+            items:
+              $ref: '#/definitions/models.Project'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all projects in an organization
+      tags:
+      - Projects
+    post:
+      consumes:
+      - application/json
+      description: Creates a new project within a specified organization. User must
+        own the organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project creation details
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Project created successfully
+          schema:
+            $ref: '#/definitions/models.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden (if user does not own organization)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found (if organization not found)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict (if project name already exists in organization)
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new project
+      tags:
+      - Projects
+  /organizations/{orgID}/projects/{projectID}:
+    delete:
+      description: Deletes a specific project by its ID within a specified organization.
+        User must own the organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a project
+      tags:
+      - Projects
+    get:
+      description: Retrieves a specific project by its ID within a specified organization.
+        User must own the organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project details
+          schema:
+            $ref: '#/definitions/models.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get project by ID
+      tags:
+      - Projects
+    put:
+      consumes:
+      - application/json
+      description: Updates a specific project by its ID within a specified organization.
+        User must own the organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Project update details
+        in: body
+        name: project
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project updated successfully
+          schema:
+            $ref: '#/definitions/models.Project'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a project
+      tags:
+      - Projects
+  /organizations/{orgID}/projects/{projectID}/boards:
+    get:
+      description: Retrieves all boards within a specified project. User must own
+        the project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of boards
+          schema:
+            items:
+              $ref: '#/definitions/models.Board'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all boards in a project
+      tags:
+      - Boards
+    post:
+      consumes:
+      - application/json
+      description: Creates a new board within a specified project. User must own the
+        project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board creation details
+        in: body
+        name: board
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateBoardRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Board created successfully
+          schema:
+            $ref: '#/definitions/models.Board'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new board
+      tags:
+      - Boards
+  /organizations/{orgID}/projects/{projectID}/boards/{boardID}:
+    delete:
+      description: Deletes a specific board by its ID within a specified project.
+        User must own the project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a board
+      tags:
+      - Boards
+    get:
+      description: Retrieves a specific board by its ID within a specified project.
+        User must own the project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Board details
+          schema:
+            $ref: '#/definitions/models.Board'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get board by ID
+      tags:
+      - Boards
+    put:
+      consumes:
+      - application/json
+      description: Updates a specific board by its ID within a specified project.
+        User must own the project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: Board update details
+        in: body
+        name: board
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateBoardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Board updated successfully
+          schema:
+            $ref: '#/definitions/models.Board'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a board
+      tags:
+      - Boards
+  /organizations/{orgID}/projects/{projectID}/boards/{boardID}/lists:
+    get:
+      description: Retrieves all lists within a specified board. User must own the
+        board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of lists
+          schema:
+            items:
+              $ref: '#/definitions/models.List'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all lists in a board
+      tags:
+      - Lists
+    post:
+      consumes:
+      - application/json
+      description: Creates a new list within a specified board. User must own the
+        board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List creation details
+        in: body
+        name: list
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateListRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: List created successfully
+          schema:
+            $ref: '#/definitions/models.List'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new list
+      tags:
+      - Lists
+  /organizations/{orgID}/projects/{projectID}/boards/{boardID}/lists/{listID}:
+    delete:
+      description: Deletes a specific list by its ID within a specified board. User
+        must own the board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a list
+      tags:
+      - Lists
+    get:
+      description: Retrieves a specific list by its ID within a specified board. User
+        must own the board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List details
+          schema:
+            $ref: '#/definitions/models.List'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get list by ID
+      tags:
+      - Lists
+    put:
+      consumes:
+      - application/json
+      description: Updates a specific list by its ID within a specified board. User
+        must own the board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      - description: List update details
+        in: body
+        name: list
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List updated successfully
+          schema:
+            $ref: '#/definitions/models.List'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a list
+      tags:
+      - Lists
+  /organizations/{orgID}/projects/{projectID}/boards/{boardID}/lists/{listID}/cards:
+    get:
+      description: Retrieves all cards within a specified list. User must own the
+        list's board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of cards
+          schema:
+            items:
+              $ref: '#/definitions/models.Card'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get all cards in a list
+      tags:
+      - Cards
+    post:
+      consumes:
+      - application/json
+      description: Creates a new card within a specified list. User must own the list's
+        board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      - description: Card creation details
+        in: body
+        name: card
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateCardRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Card created successfully
+          schema:
+            $ref: '#/definitions/models.Card'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new card
+      tags:
+      - Cards
+  /organizations/{orgID}/projects/{projectID}/boards/{boardID}/lists/{listID}/cards/{cardID}:
+    delete:
+      description: Deletes a specific card by its ID within a specified list. User
+        must own the list's board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      - description: Card ID
+        in: path
+        name: cardID
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a card
+      tags:
+      - Cards
+    get:
+      description: Retrieves a specific card by its ID within a specified list. User
+        must own the list's board's project's organization.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      - description: Card ID
+        in: path
+        name: cardID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Card details
+          schema:
+            $ref: '#/definitions/models.Card'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get card by ID
+      tags:
+      - Cards
+    put:
+      consumes:
+      - application/json
+      description: Updates a specific card by its ID within a specified list. User
+        must own the list's board's project's organization. Supports moving card to
+        another list.
+      parameters:
+      - description: Organization ID
+        in: path
+        name: orgID
+        required: true
+        type: string
+      - description: Project ID
+        in: path
+        name: projectID
+        required: true
+        type: string
+      - description: Board ID
+        in: path
+        name: boardID
+        required: true
+        type: string
+      - description: List ID
+        in: path
+        name: listID
+        required: true
+        type: string
+      - description: Card ID
+        in: path
+        name: cardID
+        required: true
+        type: string
+      - description: Card update details
+        in: body
+        name: card
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateCardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Card updated successfully
+          schema:
+            $ref: '#/definitions/models.Card'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a card
+      tags:
+      - Cards
+  /register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with username, email, and password
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registered successfully
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - Authentication
+securityDefinitions:
+  ApiKeyAuth:
+    description: Enter your JWT token in the format "Bearer <your_token>".
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
+tags:
+- description: '"User login and registration"'
+  name: Authentication
+- description: '"Operations related to organizations"'
+  name: Organizations
+- description: '"Operations related to projects within organizations"'
+  name: Projects
+- description: '"Operations related to Kanban boards within projects"'
+  name: Boards
+- description: '"Operations related to lists (columns) within boards"'
+  name: Lists
+- description: '"Operations related to cards (tasks) within lists"'
+  name: Cards

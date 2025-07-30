@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"kanban-app/api/auth"
 	"kanban-app/api/database"
 	"kanban-app/api/models"
 	"log"
@@ -19,7 +20,7 @@ func NewProjectService() *ProjectService {
 	return &ProjectService{}
 }
 
-func (s *ProjectService) CreateProject(organizationID, name, description string) (*models.Project, error) {
+func (s *ProjectService) CreateProject(organizationID, name, description, userID string) (*models.Project, error) {
 	project := models.Project{
 		ID:             uuid.New().String(),
 		OrganizationID: organizationID,
@@ -38,6 +39,13 @@ func (s *ProjectService) CreateProject(organizationID, name, description string)
 	}
 
 	log.Printf("Project created: %s in organization %s\n", project.Name, project.OrganizationID)
+
+	// Add policy to Casbin
+	_, err := auth.NewAuthorizationService().AddPolicy(userID, project.ID, "owner")
+	if err != nil {
+		return nil, fmt.Errorf("failed to add policy for new project: %w", err)
+	}
+
 	return &project, nil
 }
 

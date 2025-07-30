@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"fmt"
+	"kanban-app/api/auth"
 	"kanban-app/api/database"
 	"kanban-app/api/models"
 	"log"
@@ -37,6 +38,13 @@ func (s *OrganizationService) CreateOrganization(name, ownerID string) (*models.
 	}
 
 	log.Printf("Organization created: %s by user %s\n", org.Name, org.OwnerID)
+
+	// Add policy to Casbin
+	_, err := auth.NewAuthorizationService().AddPolicy(ownerID, org.ID, "owner")
+	if err != nil {
+		return nil, fmt.Errorf("failed to add policy for new organization: %w", err)
+	}
+
 	return &org, nil
 }
 
